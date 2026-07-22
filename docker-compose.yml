@@ -1,0 +1,20 @@
+# Demo infra. Our own Redis for the app store + event bus
+#   appendonly yes      -> SoR survives a crash mid-demo
+#   maxmemory-policy noeviction -> Agent Identity records never evicted under memory pressure
+#
+# Inmor runs from its own compose on :8000 (admin) and :8080 (TA).
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory-policy noeviction
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:

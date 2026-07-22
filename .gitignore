@@ -1,0 +1,17 @@
+# dependencies / build output — not committed
+node_modules/
+.next/
+dist/
+build/
+target/
+*.tsbuildinfo
+*.log
+
+# secrets / local config — NEVER commit (holds Inmor API key, Authlete tokens)
+.env
+.env.local
+.env.*.local
+
+# IDE / OS noise
+.idea/
+.DS_Store
