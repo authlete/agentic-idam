@@ -1,5 +1,5 @@
 // Domain model — the Agent Trust Identity aggregate and its neighbours. This is the
-// system-of-record object; Inmor holds only its federation PROJECTION (subordinate
+// system-of-record object; Vouch holds only its federation PROJECTION (subordinate
 // statement + trust marks).
 
 export type LifecycleState =
@@ -19,15 +19,15 @@ export interface Owner {
   team?: string;
 }
 
-/** A trust mark issued to this identity (mirrors what Inmor stores; id lets us revoke). */
+/** A trust mark issued to this identity (mirrors what Vouch stores; id lets us revoke). */
 export interface IssuedMark {
-  /** Inmor trust mark record id (needed to PUT active:false on revoke). */
-  inmorId: number;
+  /** Vouch trust mark record id (needed to PUT active:false on revoke). */
+  markId: number;
   /** Trust mark type URL (the governance gate). */
   type: string;
   /** The signed trust mark JWT (embedded in the leaf's trust_marks so /resolve can verify it). */
   jwt: string;
-  /** active | revoked (local view; Inmor is authoritative via /trust_mark_status). */
+  /** active | revoked (local view; Vouch is authoritative via /trust_mark_status). */
   status: 'active' | 'revoked';
   issuedAt: string;
 }

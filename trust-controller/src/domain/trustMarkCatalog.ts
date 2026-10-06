@@ -1,4 +1,4 @@
-// The governance-stage trust mark type catalog. These are bootstrapped ONCE into Inmor
+// The governance-stage trust mark type catalog. These are bootstrapped ONCE into Vouch
 // (POST /trustmarktypes) at setup. Each type = a named governance gate. Per-agent instances
 // are issued as gates clear.
 //

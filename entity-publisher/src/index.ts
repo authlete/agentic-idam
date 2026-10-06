@@ -1,5 +1,5 @@
 // entity-publisher entry point. Publishes agent leaf entity configurations and serves them at
-// {entity_id}/.well-known/openid-federation (the URL Inmor fetches on POST /subordinates and
+// {entity_id}/.well-known/openid-federation (the URL the Trust Anchor fetches on POST /subordinates and
 // Authlete fetches during native resolution).
 
 import { serve } from '@hono/node-server';
@@ -38,7 +38,8 @@ app.post('/publish', async (c) => {
   const body = publishSchema.parse(await c.req.json());
   const record = await buildLeaf({
     entityId: body.entityId,
-    authorityHints: body.authorityHints ?? [config.trustAnchor],
+    // The Trust Controller always supplies authority_hints (the anchor it governs under).
+    authorityHints: body.authorityHints ?? [],
     trustMarks: body.trustMarks ?? [],
     metadata: body.metadata ?? { openid_relying_party: {} },
   });

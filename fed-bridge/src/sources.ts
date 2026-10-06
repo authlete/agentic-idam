@@ -1,7 +1,7 @@
 // Data sources the bridge reads to build the Authlete client:
 //   - Trust Controller (GET /identities/:entityId) for capability + marks + jwks (the governed state)
-//   - Inmor /resolve for the VERIFIED trust chain + trust marks (the published federation view)
-// Inmor's TA is HTTPS with a self-signed dev cert, so resolve uses an undici dispatcher that
+//   - the Trust Anchor /resolve for the VERIFIED trust chain + trust marks (the published federation view)
+// the Trust Anchor is HTTPS with a self-signed dev cert, so resolve uses an undici dispatcher that
 // skips verification (DEV ONLY).
 
 import { Agent } from 'undici';
@@ -53,15 +53,15 @@ export interface ResolveView {
   verifiedMarkTypes: string[];
 }
 
-/** Fetch the trust chain from Inmor /resolve and INDEPENDENTLY verify it against the pinned trust
+// TODO: Switch to use TC /resolve endpoint instead of revalidting the trust main in each bridge.
+
+/** Fetch the trust chain from the Trust Anchor /resolve and INDEPENDENTLY verify it against the pinned trust
  *  anchor. Returns the verified view, or null if there is no chain or verification fails — the
- *  bridge treats a chain it cannot verify as ineligible (fail-closed). The /resolve response is
- *  just a transport for the signed statements; trust comes from verifying them, not the transport.
- *  The TA's base URL doubles as the trust anchor entity id (same URL in this demo). */
+ *  bridge treats a chain it cannot verify as ineligible (fail-closed). */
 export async function resolve(entityId: string): Promise<ResolveView | null> {
   try {
-    const trustAnchor = config.inmorTaUrl;
-    const url = `${config.inmorTaUrl}/resolve?sub=${encodeURIComponent(entityId)}&trust_anchor=${encodeURIComponent(trustAnchor)}`;
+    const trustAnchor = config.trustAnchorUrl;
+    const url = `${config.trustAnchorUrl}/resolve?sub=${encodeURIComponent(entityId)}&trust_anchor=${encodeURIComponent(trustAnchor)}`;
     const res = await fetch(url, { dispatcher: insecureAgent } as RequestInit);
     if (!res.ok) return null;
     const jwt = await res.text();

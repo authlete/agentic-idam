@@ -1,6 +1,6 @@
 // Governance orchestration (governance/certification and lifecycle orchestration acting on the
 // Agent Trust Identity). Runs the side-effects a
-// lifecycle transition implies: issue/revoke trust marks in Inmor, publish/withdraw the leaf,
+// lifecycle transition implies: issue/revoke trust marks via Vouch, publish/withdraw the leaf,
 // create/withdraw the subordinate, emit lifecycle events. The state machine (pure) decides IF a
 // transition is legal; this decides WHAT happens.
 //
@@ -8,12 +8,12 @@
 //   publish : issue cert marks -> publish leaf (marks embedded) -> create/reactivate subordinate
 //   withdraw: revoke marks -> deactivate subordinate -> withdraw leaf (404, breaks the chain)
 //
-// APPROVE ordering (Inmor validates the leaf on POST /subordinates, issue 3): marks -> leaf ->
+// APPROVE ordering (the anchor validates the leaf on subordinate creation): marks -> leaf ->
 // subordinate, with retry to absorb propagation lag.
 
 import { emit } from '../infra/eventBus.js';
 import * as store from '../store/agentIdentityStore.js';
-import * as inmor from '../clients/inmor.js';
+import * as vouch from '../clients/vouch.js';
 import { publishLeaf, withdrawLeaf } from '../clients/entityPublisher.js';
 import { nextState, type LifecycleTransition } from '../domain/stateMachine.js';
 import { TRUST_MARK_TYPES } from '../domain/trustMarkCatalog.js';
@@ -39,29 +39,21 @@ function audit(ai: AgentIdentity, action: string, detail?: Record<string, unknow
 }
 
 // ---- Trust marks ----
-
-async function typeId(typeUrl: string): Promise<number> {
-  let id = await inmor.getTrustMarkTypeId(typeUrl);
-  if (id === null) {
-    await inmor.ensureTrustMarkType(typeUrl);
-    id = await inmor.getTrustMarkTypeId(typeUrl);
-  }
-  if (id === null) throw new Error(`Could not resolve trust mark type: ${typeUrl}`);
-  return id;
-}
+// Vouch resolves a trust-mark type URL to the underlying record itself, so the TC issues purely
+// by type URL + subject.
 
 async function issueMark(ai: AgentIdentity, typeUrl: string): Promise<IssuedMark> {
-  const rec = await inmor.issueTrustMark({ typeId: await typeId(typeUrl), domain: ai.entityId });
+  const rec = await vouch.issueTrustMark({ type: typeUrl, sub: ai.entityId });
   // Keep one IssuedMark per type: update the existing (revoked) entry on reapprove, else add.
   const existing = ai.marks.find((m) => m.type === typeUrl);
   if (existing) {
-    existing.inmorId = rec.id;
-    existing.jwt = rec.mark;
+    existing.markId = rec.id;
+    existing.jwt = rec.trustMark;
     existing.status = 'active';
     existing.issuedAt = new Date().toISOString();
     return existing;
   }
-  const mark: IssuedMark = { inmorId: rec.id, type: typeUrl, jwt: rec.mark, status: 'active', issuedAt: new Date().toISOString() };
+  const mark: IssuedMark = { markId: rec.id, type: typeUrl, jwt: rec.trustMark, status: 'active', issuedAt: new Date().toISOString() };
   ai.marks.push(mark);
   return mark;
 }
@@ -69,7 +61,7 @@ async function issueMark(ai: AgentIdentity, typeUrl: string): Promise<IssuedMark
 async function revokeAllMarks(ai: AgentIdentity): Promise<void> {
   for (const m of ai.marks) {
     if (m.status === 'active') {
-      await inmor.revokeTrustMark(m.inmorId);
+      await vouch.revokeTrustMark(m.markId);
       m.status = 'revoked';
     }
   }
@@ -100,7 +92,7 @@ async function publishAndRegister(ai: AgentIdentity): Promise<void> {
   const metadata = defaultLeafMetadata(ai);
   const published = await publishLeaf({
     entityId: ai.entityId,
-    authorityHints: [inmor.trustAnchorUrl()],
+    authorityHints: [vouch.trustAnchorUrl()],
     trustMarks,
     metadata,
   });
@@ -109,14 +101,14 @@ async function publishAndRegister(ai: AgentIdentity): Promise<void> {
   if (ai.downstream.federationSubordinateId !== undefined) {
     // reapprove: the subordinate exists (deactivated) — reactivate with fresh keys.
     const subId = ai.downstream.federationSubordinateId;
-    await withRetry(() => inmor.reactivateSubordinate(subId, metadata, published.jwks));
+    await withRetry(() => vouch.reactivateSubordinate(subId, metadata, published.jwks));
   } else {
     const sub = await withRetry(() =>
-      inmor.createSubordinate({
+      vouch.createSubordinate({
         entityId: ai.entityId,
         metadata,
         jwks: published.jwks,
-        requiredTrustmarks: TRUST_MARK_TYPES.agentCertified,
+        requiredTrustMarks: TRUST_MARK_TYPES.agentCertified,
       }),
     );
     ai.downstream.federationSubordinateId = sub.id;
@@ -126,10 +118,10 @@ async function publishAndRegister(ai: AgentIdentity): Promise<void> {
 async function withdrawAll(ai: AgentIdentity, from: LifecycleState): Promise<void> {
   await revokeAllMarks(ai); // idempotent: skips already-revoked marks
   // Deactivate the subordinate ONLY from `approved` (the only state with a live subordinate).
-  // Inmor's update re-fetches the leaf to re-validate, so once the leaf is 404 (already
-  // withdrawn on a prior suspend/revoke) a second deactivate would 500. Guard on the source state.
+  // The anchor re-fetches the leaf to re-validate on update, so once the leaf is 404 (already
+  // withdrawn on a prior suspend/revoke) a second deactivate would fail. Guard on the source state.
   if (from === 'approved' && ai.downstream.federationSubordinateId !== undefined) {
-    await inmor.deactivateSubordinate(ai.downstream.federationSubordinateId);
+    await vouch.deactivateSubordinate(ai.downstream.federationSubordinateId);
   }
   await withdrawLeaf(ai.entityId); // leaf /.well-known -> 404, breaks the chain at the source
 }
@@ -206,6 +198,8 @@ function defaultLeafMetadata(ai: AgentIdentity): Record<string, unknown> {
   };
 }
 
+// Retry transient failures: a 400 while the freshly-published leaf is still propagating (the anchor
+// validates it on subordinate creation), or a 5xx upstream blip. Other 4xx are terminal.
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, delayMs = 750): Promise<T> {
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
@@ -213,7 +207,8 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3, delayMs = 750): 
       return await fn();
     } catch (e) {
       lastErr = e;
-      if (e instanceof inmor.InmorError && e.status !== 400) throw e;
+      const retryable = e instanceof vouch.VouchError && (e.status === 400 || e.status >= 500);
+      if (!retryable) throw e;
       if (i < attempts - 1) await sleep(delayMs);
     }
   }

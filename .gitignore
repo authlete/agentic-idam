@@ -7,7 +7,7 @@ target/
 *.tsbuildinfo
 *.log
 
-# secrets / local config — NEVER commit (holds Inmor API key, Authlete tokens)
+# secrets / local config — NEVER commit (holds the Vouch bearer token and Authlete tokens)
 .env
 .env.local
 .env.*.local

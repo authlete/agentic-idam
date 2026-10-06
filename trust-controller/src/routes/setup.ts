@@ -1,7 +1,7 @@
-// Setup + health routes. Bootstraps the governance-stage trust mark catalog into Inmor.
+// Setup + health routes. Bootstraps the governance-stage trust mark catalog through Vouch.
 
 import { Hono } from 'hono';
-import * as inmor from '../clients/inmor.js';
+import * as vouch from '../clients/vouch.js';
 import { pingRedis } from '../infra/redis.js';
 import { ALL_TRUST_MARK_TYPE_URLS } from '../domain/trustMarkCatalog.js';
 
@@ -12,14 +12,14 @@ setup.get('/health', async (c) => {
   return c.json({ ok: redis, redis, service: 'trust-controller' });
 });
 
-/** Bootstrap: ensure all governance-stage trust mark types, THEN (re)generate the TA entity
- *  config. Order matters — create_server_statement() auto-includes ACTIVE trust mark types in
- *  the TA's `trust_mark_issuers`, so the types must exist before the entity config is built, or
+/** Bootstrap: ensure all governance-stage trust mark types, THEN (re)generate the anchor entity
+ *  config. Order matters — the anchor entity configuration auto-includes ACTIVE trust mark types in
+ *  its `trust_mark_issuers`, so the types must exist before the entity config is built, or
  *  /resolve will drop the marks (verified but unrecognized issuer). */
 setup.post('/bootstrap', async (c) => {
   for (const url of ALL_TRUST_MARK_TYPE_URLS) {
-    await inmor.ensureTrustMarkType(url);
+    await vouch.ensureTrustMarkType(url);
   }
-  await inmor.ensureServerEntity();
+  await vouch.ensureServerEntity();
   return c.json({ ok: true, trustMarkTypes: ALL_TRUST_MARK_TYPE_URLS });
 });

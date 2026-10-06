@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * Reproduces Authlete's OpenID Federation trust-chain resolution with the same Nimbus SDK:
  * resolves the chain from an RP up to a Trust Anchor and prints where it breaks. TLS verification
- * is disabled so the self-signed Inmor TA cert (:8080) doesn't block the fetch.
+ * is disabled so the self-signed Trust Anchor cert (:8080) doesn't block the fetch.
  *
  * Usage: TrustChainDebug [rpEntityId] [trustAnchorEntityId]
  */

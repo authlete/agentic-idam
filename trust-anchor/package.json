@@ -1,9 +1,9 @@
 {
-  "name": "trust-controller",
+  "name": "trust-anchor",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Agentic IDAM Trust Controller - control plane (functions 1/2/4/5). Powered by the Vouch API.",
+  "description": "Reference Trust Anchor - a thin, customizable OpenID Federation front door that owns the public domain and relays every request to Vouch. Holds no federation protocol logic.",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
     "start": "tsx --env-file=.env src/index.ts",
@@ -11,10 +11,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
-    "hono": "^4.6.14",
-    "ioredis": "^5.4.2",
-    "undici": "^6.27.0",
-    "zod": "^3.24.1"
+    "hono": "^4.6.14"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

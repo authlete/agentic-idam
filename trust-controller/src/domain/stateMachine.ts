@@ -1,6 +1,6 @@
 // Agent Identity lifecycle state machine (lifecycle orchestration drives the trust identity,
 // guarded by governance and certification).
-// Pure logic: validates a transition and returns the next state. Side-effects (Inmor calls,
+// Pure logic: validates a transition and returns the next state. Side-effects (Vouch calls,
 // leaf publish, event emit) are run by the governance service, NOT here.
 //
 //        Manifest received

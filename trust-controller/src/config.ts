@@ -1,7 +1,9 @@
-// Environment-driven configuration. Explicit defaults so the service runs locally
-// out of the box (Inmor on :8000/:8080, our Redis on :6380).
+// Environment-driven configuration. Explicit defaults so the service runs locally out of the box.
+//
+// The Trust Controller governs through Vouch (the control-plane API engine) and reads the
+// published federation view from the public reference Trust Anchor's /resolve. It never talks to
+// the federation engine directly.
 
-// Read an env var, falling back to a default when it is unset or empty.
 function envString(name: string, fallback: string): string {
   const value = process.env[name];
   return value === undefined || value === '' ? fallback : value;
@@ -12,9 +14,11 @@ function envNumber(name: string, fallback: number): number {
   return value === undefined || value === '' ? fallback : Number(value);
 }
 
+const tcBaseUrl = envString('TC_BASE_URL', 'http://localhost:8091');
+
 export const config = {
   port: envNumber('PORT', 8091),
-  tcBaseUrl: envString('TC_BASE_URL', 'http://localhost:8091'),
+  tcBaseUrl,
 
   redis: {
     url: envString('REDIS_URL', 'redis://localhost:6380'),
@@ -24,11 +28,18 @@ export const config = {
     },
   },
 
-  inmor: {
-    adminBaseUrl: envString('INMOR_ADMIN_URL', 'http://localhost:8000/api/v1'),
-    taBaseUrl: envString('INMOR_TA_URL', 'http://localhost:8080'),
-    apiKey: envString('INMOR_API_KEY', ''),
-    trustAnchor: envString('INMOR_TRUST_ANCHOR', 'http://localhost:8080'),
+  // Vouch — the API the TC calls for both management and serve operations.
+  vouch: {
+    baseUrl: envString('VOUCH_BASE_URL', 'http://localhost:8094'),
+    bearer: envString('VOUCH_BEARER', 'dev-vouch-token'),
+    anchorId: envString('ANCHOR_ID', 'local-anchor'),
+  },
+
+  // The anchor's public entity_id (agents' authority_hints + the /resolve trust_anchor). The Trust
+  // Controller IS the Trust Anchor, so this defaults to the TC's own base; override only if the
+  // federation endpoints are published on a different host.
+  anchor: {
+    entityId: envString('TRUST_ANCHOR_ENTITY_ID', tcBaseUrl),
   },
 
   entityPublisher: {

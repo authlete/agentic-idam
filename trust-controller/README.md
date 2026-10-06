@@ -1,15 +1,15 @@
 # trust-controller
 
 The **control plane**: it owns the Agent Identity (aggregate + lifecycle state machine + capability
-envelope) and is the **sole caller of Inmor's Admin API**, so the federation engine stays hidden
-behind this service. On approve it issues trust marks, publishes the agent's leaf entity config,
-creates the subordinate, and emits a lifecycle event the Federation Bridge consumes.
+envelope) and governs trust through the **Vouch API**. On approve it issues trust marks, publishes
+the agent's leaf entity config, creates the subordinate, and emits a lifecycle event the Federation
+Bridge consumes.
 
 ## Run
 
 ```bash
 docker compose -f ../docker-compose.yml up -d   # our Redis on :6380
-cp .env.example .env                             # set INMOR_API_KEY
+cp .env.example .env                             # set VOUCH_BASE_URL + VOUCH_BEARER
 npm install && npm run dev                       # http://localhost:8091
 curl -XPOST localhost:8091/setup/bootstrap       # one-time: trust-mark types, then TA entity config
 ```

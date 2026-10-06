@@ -10,8 +10,9 @@ Agent Marketplace  →  Trust Controller  →  Federation Bridge  →  Authoriza
     (onboard)           (govern + publish)    (verify + register)    (Ping / Authlete)
 ```
 
-The Trust Controller is powered by an OpenID Federation engine — Inmor in this demo, to be
-replaced by Authlete.
+The Trust Controller and Federation Bridge are powered by the **Vouch** API, which performs the
+OpenID Federation protocol and cryptography. This repo also ships a minimal reference
+`trust-anchor` that shows how to build an OpenID Federation Trust Anchor on Vouch.
 
 ## Design
 
@@ -26,27 +27,29 @@ replaced by Authlete.
 | Service | Port | Role |
 |---|---|---|
 | `console` (Next.js) | 8090 | Overview + Marketplace + Trust Controller + Federation Bridge |
-| `trust-controller` | 8091 | control plane; governance, lifecycle, sole caller of Inmor |
+| `trust-controller` | 8091 | control plane; governance + lifecycle, powered by Vouch |
 | `entity-publisher` | 8092 | serves the agents' leaf entity configs (`/.well-known`) |
 | `fed-bridge` | 8093 | verifies the trust chain, then registers the OAuth client (DCR) |
+| `trust-anchor` (reference) | 8095 | a minimal OpenID Federation Trust Anchor built on Vouch |
 | Redis (ours) | 6380 | TC store (db 2) · event streams (db 1) · bridge records (db 4) |
-| Inmor Admin / TA | 8000 / 8080 | federation engine — hidden behind the TC |
+| Vouch API | hosted | performs the OpenID Federation work; set `VOUCH_BASE_URL` + `VOUCH_BEARER` |
 
 ## Run
 
 ```bash
 docker compose up -d   # our Redis on :6380
-# Inmor runs separately — admin :8000, TA https :8080
 
 # each service: cp .env.example .env, then fill the required values:
-#   trust-controller/.env : INMOR_API_KEY
-#   fed-bridge/.env       : TRUST_ANCHOR_JWKS  (the TA's full published JWKS)
+#   trust-controller/.env : VOUCH_BASE_URL + VOUCH_BEARER (+ ANCHOR_ID)
+#   trust-anchor/.env     : VOUCH_BASE_URL + VOUCH_BEARER (+ ANCHOR_ID)
+#   fed-bridge/.env       : TRUST_ANCHOR_URL + TRUST_ANCHOR_JWKS (the anchor's full published JWKS)
 (cd trust-controller && npm i && npm run start) &
+(cd trust-anchor     && npm i && npm run start) &
 (cd entity-publisher && npm i && npm run start) &
 (cd fed-bridge       && npm i && npm run start) &
 (cd console          && npm i && npm run dev)   &   # http://localhost:8090
 
-curl -XPOST localhost:8091/setup/bootstrap        # one-time (types before TA config)
+curl -XPOST localhost:8091/setup/bootstrap        # one-time (trust-mark types, then anchor entity config)
 ```
 
 ## Demo flow

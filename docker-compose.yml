@@ -2,7 +2,7 @@
 #   appendonly yes      -> SoR survives a crash mid-demo
 #   maxmemory-policy noeviction -> Agent Identity records never evicted under memory pressure
 #
-# Inmor runs from its own compose on :8000 (admin) and :8080 (TA).
+# The demo components call the Vouch API (hosted); set VOUCH_BASE_URL per service.
 
 services:
   redis:

@@ -2,7 +2,7 @@
 //   db.store   -> system-of-record for Agent Identities (durable: appendonly + noeviction)
 //   db.streams -> lifecycle event bus (Redis Streams, one stream per event type)
 //
-// This Redis is OURS, separate from Inmor's internal Redis. We touch Inmor only via its
+// This Redis is OURS, separate from Vouch's internal Redis. We touch Vouch only via its
 // HTTP API, so we never share or poke its cache.
 
 import { Redis } from 'ioredis';

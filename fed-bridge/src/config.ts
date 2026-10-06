@@ -1,5 +1,5 @@
 // Environment-driven configuration. Explicit defaults so the service runs locally
-// out of the box (Trust Controller on :8091, Inmor TA on :8080, our Redis on :6380).
+// out of the box (Trust Controller on :8091, the Trust Anchor TA on :8080, our Redis on :6380).
 
 // Read an env var, falling back to a default when it is unset or empty.
 function envString(name: string, fallback: string): string {
@@ -31,7 +31,10 @@ export const config = {
     db: { streams: envNumber('REDIS_DB_STREAMS', 1), store: envNumber('REDIS_DB_STORE', 4) },
   },
   tcBaseUrl: envString('TC_BASE_URL', 'http://localhost:8091'),
-  inmorTaUrl: envString('INMOR_TA_URL', 'https://localhost:8080'),
+  // The Trust Controller is the Trust Anchor, so resolution happens at the same place governance
+  // does: TRUST_ANCHOR_URL defaults to TC_BASE_URL. Override it only if the federation endpoints are
+  // published on a separate host (a split serve tier) or reached via a different URL than the TC.
+  trustAnchorUrl: envString('TRUST_ANCHOR_URL', envString('TC_BASE_URL', 'http://localhost:8091')),
   // The trust anchor's public keys — the bridge verifies resolved trust chains against these
   // (zero-trust: integrity comes from these signatures, not from the /resolve transport).
   trustAnchorJwks: envJwks('TRUST_ANCHOR_JWKS'),

@@ -43,7 +43,7 @@ function trustAnchor(): { entityId: string; jwks: JSONWebKeySet } {
   if (!config.trustAnchorJwks) {
     throw new Error('TRUST_ANCHOR_JWKS is not set — cannot verify trust chains without the anchor public keys');
   }
-  return { entityId: config.inmorTaUrl, jwks: config.trustAnchorJwks as JSONWebKeySet };
+  return { entityId: config.trustAnchorUrl, jwks: config.trustAnchorJwks as JSONWebKeySet };
 }
 
 /** Verify a trust chain to the configured trust anchor. Throws if any signature or link fails. */

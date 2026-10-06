@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import * as store from '../store/agentIdentityStore.js';
 import * as governance from '../services/governance.js';
-import * as inmor from '../clients/inmor.js';
+import * as vouch from '../clients/vouch.js';
 import { onboardFromManifest } from '../services/onboarding.js';
 import { InvalidTransitionError } from '../domain/stateMachine.js';
 import type { LifecycleState } from '../domain/types.js';
@@ -46,12 +46,12 @@ identities.get('/', async (c) => {
 });
 
 /** GET /identities/:entityId/federation — the resolved trust chain + verified marks, surfaced
- *  from Inmor through the TC (so the console shows the federation view without exposing Inmor).
+ *  from Vouch through the TC (so the console shows the federation view without exposing Vouch).
  *  Registered BEFORE the greedy `/:entityId` GET so it isn't swallowed. */
 identities.get('/:entityId/federation', async (c) => {
   const raw = decodeURIComponent(c.req.param('entityId'));
   const entityId = raw.replace(/\/federation$/, '');
-  const summary = await inmor.resolveEntity(entityId);
+  const summary = await vouch.resolveEntity(entityId);
   return summary ? c.json(summary) : c.json({ resolvable: false }, 200);
 });
 

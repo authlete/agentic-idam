@@ -15,14 +15,8 @@ const IDX_ALL = 'idx:all';
 const IDX_STATE = (s: LifecycleState) => `idx:state:${s}`;
 
 /** Heal records written before a schema change so old + new blobs both work.
- *  - `downstream.inmorSubordinateId` (removed) -> `federationSubordinateId`
  *  - missing `owner` (added later) -> an explicit "unassigned" placeholder (never undefined) */
 function normalize(ai: AgentIdentity): AgentIdentity {
-  const ds = ai.downstream as Record<string, unknown> | undefined;
-  if (ds && ds.federationSubordinateId === undefined && ds.inmorSubordinateId !== undefined) {
-    ds.federationSubordinateId = ds.inmorSubordinateId;
-    delete ds.inmorSubordinateId;
-  }
   if (!ai.owner) ai.owner = { subject: '' };
   return ai;
 }

@@ -13,7 +13,7 @@
     Reproduces Authlete's OpenID Federation trust-chain resolution locally using the same
     Nimbus SDK (com.nimbusds.openid.connect.sdk.federation.trust.TrustChainResolver) that
     Authlete's FederationClientResolver.java uses. Runs on your machine, so localhost is
-    reachable; TLS verification is disabled so the self-signed Inmor TA cert (:8080) doesn't
+    reachable; TLS verification is disabled so the self-signed Trust Anchor cert (:8080) doesn't
     block the fetch. Open in IntelliJ and run TrustChainDebug.main (green arrow).
   -->
 
