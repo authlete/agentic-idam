@@ -6,9 +6,9 @@ domain: trust.authlete.dev
 
 images:
   console:          australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/console:42a7e52
-  trustController:  australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/trust-controller:split-1
-  entityPublisher:  australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/entity-publisher:split-1
-  fedBridge:        australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/fed-bridge:split-1
+  trustController:  australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/trust-controller:1.0.0
+  entityPublisher:  australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/entity-publisher:1.0.0
+  fedBridge:        australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/fed-bridge:1.0.0
   trustAnchor:      australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/trust-anchor:vouch-1
 pullPolicy: IfNotPresent
 
