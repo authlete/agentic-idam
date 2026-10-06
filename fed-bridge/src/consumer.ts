@@ -25,6 +25,17 @@ const STREAM_LIST: ConsumedStream[] = [STREAMS.published, STREAMS.suspended, STR
 
 const reader = new Redis(config.redis.url, { db: config.redis.db.streams });
 
+// Log a concise one-liner on connection errors (collapsing reconnect bursts) instead of letting
+// ioredis dump an "Unhandled error event" stack trace on every retry.
+let lastErrorLoggedAt = 0;
+reader.on('error', (err: Error) => {
+  const now = Date.now();
+  if (now - lastErrorLoggedAt > 5000) {
+    console.warn(`[bridge] redis (streams) connection error: ${err.message}`);
+    lastErrorLoggedAt = now;
+  }
+});
+
 async function ensureGroups(): Promise<void> {
   for (const stream of STREAM_LIST) {
     try {

@@ -10,6 +10,17 @@ import type { ResolveView } from './sources.js';
 
 const redis = new Redis(config.redis.url, { db: config.redis.db.store });
 
+// Log a concise one-liner on connection errors (collapsing reconnect bursts) instead of letting
+// ioredis dump an "Unhandled error event" stack trace on every retry.
+let lastErrorLoggedAt = 0;
+redis.on('error', (err: Error) => {
+  const now = Date.now();
+  if (now - lastErrorLoggedAt > 5000) {
+    console.warn(`[bridge] redis (store) connection error: ${err.message}`);
+    lastErrorLoggedAt = now;
+  }
+});
+
 const KEY = (entityId: string) => `bridge:client:${entityId}`;
 const IDX = 'bridge:clients';
 

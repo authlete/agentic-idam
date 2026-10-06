@@ -14,6 +14,7 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
 import { config } from './config.js';
 import { setup } from './routes/setup.js';
 import { identities } from './routes/identities.js';
@@ -23,6 +24,7 @@ import { closeRedis } from './infra/redis.js';
 
 const app = new Hono();
 
+app.use('*', logger()); // log every inbound request (method, path, status, duration)
 app.use('*', cors()); // demo: allow the console UI (localhost:8090) to call directly
 app.get('/', (c) => c.json({ service: 'trust-controller', ok: true }));
 app.route('/setup', setup);
@@ -34,6 +36,8 @@ app.route('/', federation);
 // Surface Vouch failures as 502 (upstream) with context, so the UI can show what broke.
 app.onError((err, c) => {
   if (err instanceof VouchError) {
+    // Log the upstream failure so operators can see WHY a transition failed (the UI only gets a 502).
+    console.error(`[tc] vouch ${err.path} -> ${err.status}:`, err.body);
     return c.json({ error: 'vouch_error', status: err.status, path: err.path, detail: err.body }, 502);
   }
   console.error(err);
