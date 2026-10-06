@@ -30,10 +30,6 @@ export async function get(entityId: string): Promise<AgentIdentity | null> {
   return raw ? parse(raw) : null;
 }
 
-export async function exists(entityId: string): Promise<boolean> {
-  return (await storeRedis.exists(KEY(entityId))) === 1;
-}
-
 /** Create a new identity. Fails if one already exists for this entityId. */
 export async function create(ai: AgentIdentity): Promise<void> {
   const ok = await storeRedis.set(KEY(ai.entityId), JSON.stringify(ai), 'NX');
@@ -71,7 +67,5 @@ export async function listByState(state: LifecycleState): Promise<AgentIdentity[
 async function loadMany(ids: string[]): Promise<AgentIdentity[]> {
   if (ids.length === 0) return [];
   const raws = await storeRedis.mget(ids.map(KEY));
-  return raws
-    .filter((r: string | null): r is string => r !== null)
-    .map((r: string) => parse(r));
+  return raws.filter((r): r is string => r !== null).map((r) => parse(r));
 }

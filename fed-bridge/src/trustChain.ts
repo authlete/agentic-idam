@@ -48,9 +48,9 @@ function trustAnchor(): { entityId: string; jwks: JSONWebKeySet } {
 
 /** Verify a trust chain to the configured trust anchor. Throws if any signature or link fails. */
 export async function verifyTrustChain(chain: string[]): Promise<VerifiedChain> {
-  console.log(`[bridge] verifying trust chain of length ${chain.length} against anchor ${trustAnchor().entityId}`);
-  if (chain.length < 2) throw new Error('trust chain too short');
   const anchor = trustAnchor();
+  console.log(`[bridge] verifying trust chain of length ${chain.length} against anchor ${anchor.entityId}`);
+  if (chain.length < 2) throw new Error('trust chain too short');
 
   // 1. The chain root (TA entity config) must be self-issued and signed by the anchor keys.
   const root = await verifyWith(statementAt(chain, chain.length - 1), anchor.jwks);

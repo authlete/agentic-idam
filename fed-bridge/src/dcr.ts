@@ -20,8 +20,8 @@ import type { AgentIdentityView, ResolveView } from './sources.js';
 
 // DCR endpoints (and the returned registration_client_uri) may be HTTPS with a self-signed dev
 // cert (e.g. https://localhost via caddy). Accept it in dev. DEV ONLY.
-const insecure = new Agent({ connect: { rejectUnauthorized: false } });
-const fetchOpts = (init: RequestInit): RequestInit => ({ ...init, dispatcher: insecure } as RequestInit);
+const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } });
+const fetchOpts = (init: RequestInit): RequestInit => ({ ...init, dispatcher: insecureAgent } as RequestInit);
 
 export interface GovernanceDecision {
   allowed: boolean;

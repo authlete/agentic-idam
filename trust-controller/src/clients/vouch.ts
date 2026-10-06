@@ -47,7 +47,7 @@ export async function ensureServerEntity(): Promise<void> {
 // ---- Trust mark types ----
 
 export async function ensureTrustMarkType(type: string): Promise<void> {
-  await manage<unknown>(`${pathFor('trust-mark-types')}`, 'POST', { type });
+  await manage<unknown>(pathFor('trust-mark-types'), 'POST', { type });
 }
 
 // ---- Trust marks ----
@@ -110,6 +110,8 @@ export interface ServeEnvelope {
   responseContent: string;
 }
 
+// Never throws: a serve failure becomes a 502 envelope so the federation routes always have
+// something well-formed to relay (unlike manage(), which throws VouchError on error).
 export async function callServe(op: string, parameters: string): Promise<ServeEnvelope> {
   const res = await fetch(`${config.vouch.baseUrl}${pathFor(op)}`, {
     method: 'POST',

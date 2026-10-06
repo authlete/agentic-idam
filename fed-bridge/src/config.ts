@@ -1,5 +1,5 @@
 // Environment-driven configuration. Explicit defaults so the service runs locally
-// out of the box (Trust Controller on :8091, the Trust Anchor TA on :8080, our Redis on :6380).
+// out of the box (Trust Controller on :8091, which is also the Trust Anchor; our Redis on :6380).
 
 // Read an env var, falling back to a default when it is unset or empty.
 function envString(name: string, fallback: string): string {
@@ -32,8 +32,9 @@ export const config = {
   },
   tcBaseUrl: envString('TC_BASE_URL', 'http://localhost:8091'),
   // The Trust Controller is the Trust Anchor, so resolution happens at the same place governance
-  // does: TRUST_ANCHOR_URL defaults to TC_BASE_URL. Override it only if the federation endpoints are
-  // published on a separate host (a split serve tier) or reached via a different URL than the TC.
+  // does: TRUST_ANCHOR_URL defaults to TC_BASE_URL. This value is used both as the /resolve base URL
+  // (sources.ts) and as the anchor's entity_id when verifying the chain (trustChain.ts) — they are
+  // the same host. Override it only if the federation endpoints are published on a separate host.
   trustAnchorUrl: envString('TRUST_ANCHOR_URL', envString('TC_BASE_URL', 'http://localhost:8091')),
   // The trust anchor's public keys — the bridge verifies resolved trust chains against these
   // (zero-trust: integrity comes from these signatures, not from the /resolve transport).

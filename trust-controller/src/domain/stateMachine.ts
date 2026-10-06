@@ -38,15 +38,11 @@ const TRANSITIONS: Record<LifecycleTransition, TransitionRule> = {
   retire: { from: ['revoked'], to: 'retired' },
 };
 
-export function canTransition(current: LifecycleState, t: LifecycleTransition): boolean {
-  return TRANSITIONS[t].from.includes(current);
-}
-
 /** Returns the next state or throws if the transition is not allowed from `current`. */
-export function nextState(current: LifecycleState, t: LifecycleTransition): LifecycleState {
-  const rule = TRANSITIONS[t];
+export function nextState(current: LifecycleState, transition: LifecycleTransition): LifecycleState {
+  const rule = TRANSITIONS[transition];
   if (!rule.from.includes(current)) {
-    throw new InvalidTransitionError(current, t);
+    throw new InvalidTransitionError(current, transition);
   }
   return rule.to;
 }

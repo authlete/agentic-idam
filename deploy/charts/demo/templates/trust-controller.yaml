@@ -1,0 +1,48 @@
+# trust-controller — the Trust Anchor: governs via Vouch management and serves the federation
+# endpoints via Vouch serve. Never talks to the engine directly.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trust-controller
+  labels: {{- include "tp.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: trust-controller }
+  template:
+    metadata:
+      labels: { app: trust-controller }
+    spec:
+      containers:
+        - name: trust-controller
+          image: {{ .Values.images.trustController }}
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          env:
+            - { name: PORT, value: "8091" }
+            - { name: TC_BASE_URL, value: "https://{{ include "tp.host" (list . "tc") }}" }
+            - { name: REDIS_URL, value: "redis://redis:6379" }
+            - { name: REDIS_DB_STREAMS, value: "1" }
+            - { name: REDIS_DB_STORE, value: "2" }
+            # Vouch (hosted API). entity_id defaults to TC_BASE_URL (the TC is the anchor).
+            - { name: VOUCH_BASE_URL, value: {{ .Values.vouch.baseUrl | quote }} }
+            - { name: ANCHOR_ID, value: {{ .Values.anchor.id | quote }} }
+            - name: VOUCH_BEARER
+              valueFrom: { secretKeyRef: { name: {{ .Values.secrets.vouchBearer }}, key: VOUCH_BEARER } }
+            - { name: ENTITY_PUBLISHER_URL, value: "http://entity-publisher:8092" }
+            - { name: AGENT_BASE_URL, value: "https://{{ include "tp.host" (list . "rp") }}/agents" }
+          ports: [{ containerPort: 8091 }]
+          livenessProbe:
+            tcpSocket: { port: 8091 }
+            initialDelaySeconds: 10
+          readinessProbe:
+            tcpSocket: { port: 8091 }
+            initialDelaySeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trust-controller
+  labels: {{- include "tp.labels" . | nindent 4 }}
+spec:
+  selector: { app: trust-controller }
+  ports: [{ port: 8091, targetPort: 8091 }]

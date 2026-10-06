@@ -1,0 +1,44 @@
+{{- if .Values.referenceTrustAnchor.enabled }}
+# reference trust-anchor (hello-world) — OFF by default. The Trust Controller is the demo's real
+# Trust Anchor; both play the same role, so only one is deployed. Enable for the standalone scenario
+# and point it at its own Vouch (referenceTrustAnchor.vouchBaseUrl / .anchorId).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trust-anchor
+  labels: {{- include "tp.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: trust-anchor }
+  template:
+    metadata:
+      labels: { app: trust-anchor }
+    spec:
+      containers:
+        - name: trust-anchor
+          image: {{ .Values.images.trustAnchor }}
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          env:
+            - { name: PORT, value: "8095" }
+            - { name: VOUCH_BASE_URL, value: {{ .Values.referenceTrustAnchor.vouchBaseUrl | quote }} }
+            - { name: ANCHOR_ID, value: {{ .Values.referenceTrustAnchor.anchorId | quote }} }
+            - name: VOUCH_BEARER
+              valueFrom: { secretKeyRef: { name: {{ .Values.secrets.vouchBearer }}, key: VOUCH_BEARER } }
+          ports: [{ containerPort: 8095 }]
+          livenessProbe:
+            tcpSocket: { port: 8095 }
+            initialDelaySeconds: 10
+          readinessProbe:
+            tcpSocket: { port: 8095 }
+            initialDelaySeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trust-anchor
+  labels: {{- include "tp.labels" . | nindent 4 }}
+spec:
+  selector: { app: trust-anchor }
+  ports: [{ port: 8095, targetPort: 8095 }]
+{{- end }}

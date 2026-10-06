@@ -1,0 +1,16 @@
+demo deployed to namespace {{ .Release.Namespace }} (on top of Vouch at {{ .Values.vouch.baseUrl }}).
+
+Hosts (served by the shared Caddy from the vouch-platform chart):
+  console : https://{{ include "tp.host" (list . "console") }}
+  tc      : https://{{ include "tp.host" (list . "tc") }}   (Trust Controller = Trust Anchor)
+  bridge  : https://{{ include "tp.host" (list . "bridge") }}
+  rp      : https://{{ include "tp.host" (list . "rp") }}
+{{- if .Values.referenceTrustAnchor.enabled }}
+  ta      : https://{{ include "tp.host" (list . "ta") }}   (reference trust-anchor)
+{{- end }}
+
+Next:
+  kubectl -n {{ .Release.Namespace }} get pods
+  # one-time bootstrap (trust-mark types, then the anchor entity config):
+  kubectl -n {{ .Release.Namespace }} exec deploy/trust-controller -- \
+    wget -qO- --post-data='' http://localhost:8091/setup/bootstrap

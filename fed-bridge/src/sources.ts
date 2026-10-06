@@ -53,15 +53,16 @@ export interface ResolveView {
   verifiedMarkTypes: string[];
 }
 
-// TODO: Switch to use TC /resolve endpoint instead of revalidting the trust main in each bridge.
+// TODO: delegate chain validation to the Trust Anchor /resolve response (verify its signature once)
+// instead of re-verifying the whole chain in every bridge.
 
 /** Fetch the trust chain from the Trust Anchor /resolve and INDEPENDENTLY verify it against the pinned trust
  *  anchor. Returns the verified view, or null if there is no chain or verification fails — the
  *  bridge treats a chain it cannot verify as ineligible (fail-closed). */
 export async function resolve(entityId: string): Promise<ResolveView | null> {
   try {
-    const trustAnchor = config.trustAnchorUrl;
-    const url = `${config.trustAnchorUrl}/resolve?sub=${encodeURIComponent(entityId)}&trust_anchor=${encodeURIComponent(trustAnchor)}`;
+    const anchor = encodeURIComponent(config.trustAnchorUrl);
+    const url = `${config.trustAnchorUrl}/resolve?sub=${encodeURIComponent(entityId)}&trust_anchor=${anchor}`;
     const res = await fetch(url, { dispatcher: insecureAgent } as RequestInit);
     if (!res.ok) return null;
     const jwt = await res.text();

@@ -61,9 +61,25 @@ curl -XPOST localhost:8091/setup/bootstrap        # one-time (trust-mark types, 
 
 ## Configuration
 
-- `TRUST_ANCHOR_JWKS` (fed-bridge, **required**) — the TA's full JWKS; the bridge fails closed without it.
+- `TRUST_ANCHOR_JWKS` (fed-bridge, **required**) — the anchor's full JWKS; the bridge fails closed without it.
 - `DCR_REGISTRATION_ENDPOINT` (fed-bridge) — the AS's registration URL (default: local `:3000`).
-- `./cleanup.sh` — reset to a clean slate; keeps the trust-mark-type catalog (see the script header).
+- `./cleanup.sh` — reset to a clean slate via the Vouch/TC APIs (never touches the engine).
+
+## Deploy (Kubernetes)
+
+The demo chart (`deploy/charts/demo`) sits on top of a hosted Vouch and the shared front door
+(deploy the `vouch-platform` chart from the `vouch` repo first). It needs the `vouch-bearer` and
+`fed-bridge-dcr` secrets, and the anchor JWKS supplied with `--set-file`:
+
+```bash
+helm install demo deploy/charts/demo -n trust-demo \
+  --set-file fedBridge.trustAnchorJwks=<anchor-jwks.json> \
+  --wait
+```
+
+Key values: `vouch.baseUrl` (the Vouch API; in-cluster `http://vouch:8094` or `https://vouch.<domain>`),
+`anchor.id`, `dcr.registrationEndpoint`. The reference `trust-anchor` is off by default
+(`referenceTrustAnchor.enabled=false`), since the Trust Controller is the demo's Trust Anchor.
 
 ## Walkthrough
 

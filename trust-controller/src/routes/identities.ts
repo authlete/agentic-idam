@@ -49,8 +49,7 @@ identities.get('/', async (c) => {
  *  from Vouch through the TC (so the console shows the federation view without exposing Vouch).
  *  Registered BEFORE the greedy `/:entityId` GET so it isn't swallowed. */
 identities.get('/:entityId/federation', async (c) => {
-  const raw = decodeURIComponent(c.req.param('entityId'));
-  const entityId = raw.replace(/\/federation$/, '');
+  const entityId = decodeURIComponent(c.req.param('entityId'));
   const summary = await vouch.resolveEntity(entityId);
   return summary ? c.json(summary) : c.json({ resolvable: false }, 200);
 });

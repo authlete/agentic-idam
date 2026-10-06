@@ -1,0 +1,42 @@
+# demo — values. Sits on top of a hosted Vouch (see the vouch-platform chart for Vouch + engine +
+# the shared front door). Sensitive material comes from Secrets referenced by name under `secrets:`.
+
+# Public DNS base. Service hostnames are <name>.<domain>, served by the shared Caddy (vouch-platform).
+domain: trust.authlete.dev
+
+images:
+  console:          australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/console:42a7e52
+  trustController:  australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/trust-controller:split-1
+  entityPublisher:  australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/entity-publisher:split-1
+  fedBridge:        australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/fed-bridge:split-1
+  trustAnchor:      australia-southeast1-docker.pkg.dev/authlete-cba/trust-demo/trust-anchor:vouch-1
+pullPolicy: IfNotPresent
+
+# Vouch API the demo calls. In-cluster by default; set to https://vouch.<domain> if Vouch is elsewhere.
+vouch:
+  baseUrl: http://vouch:8094
+
+# The anchor the demo governs. The Trust Controller IS this anchor.
+anchor:
+  id: cba-agents
+
+# Optional reference Trust Anchor (hello-world). OFF by default: the Trust Controller is the demo's
+# Trust Anchor and they play the same role. Enable only for the standalone scenario, pointing it at
+# its own Vouch (e.g. in another namespace).
+referenceTrustAnchor:
+  enabled: false
+  vouchBaseUrl: http://vouch:8094
+  anchorId: reference-anchor
+
+secrets:
+  vouchBearer: vouch-bearer   # VOUCH_BEARER (demo -> Vouch)
+  dcr: fed-bridge-dcr         # DCR_INITIAL_ACCESS_TOKEN
+
+# fed-bridge: pinned anchor JWKS (supply with --set-file). Verifies the chain before DCR.
+fedBridge:
+  trustAnchorJwks: ""
+
+# fed-bridge -> the authorization server's DCR endpoint.
+dcr:
+  registrationEndpoint: "https://authlete-as.vercel.app/api/register"
+  tokenAuthMethod: private_key_jwt

@@ -69,7 +69,8 @@ async function onPublished(entityId: string, agentRef: string): Promise<void> {
     rec.clientId = result.client_id;
     if (result.registration_client_uri) rec.registrationClientUri = result.registration_client_uri;
     if (result.registration_access_token) rec.registrationAccessToken = result.registration_access_token;
-    await reportBinding(entityId, { clientId: result.client_id, ...(result.registration_client_uri ? { registrationClientUri: result.registration_client_uri } : {}) });
+    const binding = { clientId: result.client_id, ...(result.registration_client_uri ? { registrationClientUri: result.registration_client_uri } : {}) };
+    await reportBinding(entityId, binding);
     console.log(`[bridge] published ${entityId} -> REGISTERED client ${result.client_id}`);
   }
   await store.upsert(rec);
