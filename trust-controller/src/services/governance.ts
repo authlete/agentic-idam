@@ -186,7 +186,7 @@ function defaultLeafMetadata(ai: AgentIdentity): Record<string, unknown> {
     openid_relying_party: {
       client_name: ai.displayName,
       application_type: 'web',
-      client_registration_types: ['automatic'],
+      client_registration_types: ['automatic', 'explicit'],
       redirect_uris: ai.redirectUris ?? ['http://localhost:5173/callback'],
       response_types: ['code'],
       grant_types: grantTypes,
