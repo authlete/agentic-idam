@@ -1,7 +1,7 @@
 // OpenID Federation endpoints. The Trust Controller is the Trust Anchor, so it serves the standard
 // federation endpoints here. Each is a thin relay to a Vouch serve op: forward the raw request
 // parameters and return Vouch's response (body + status + content-type) verbatim. No protocol logic
-// lives here; Vouch (and the engine behind it) does the work.
+// lives here; Vouch does the protocol work.
 
 import { Hono } from 'hono';
 import type { Context } from 'hono';
